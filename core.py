@@ -176,7 +176,7 @@ def list_templates(folder,temp_dict):
                 list_templates(obj,temp_dict)
     return temp_dict
 
-def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore,power=False):
+def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore=None,power=False):
     if not vm_name:
         raise Exception("no vm name supplied")
     # desired cluster 
@@ -189,6 +189,9 @@ def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore,power=Fa
     vmconf = vim.vm.ConfigSpec()
 
     # Storage DRS resourse
+    if not vc_datastore:
+        vc_datastore = creds['VC_DATASTORE']
+    
     podsel = vim.storageDrs.PodSelectionSpec()
     pod = get_obj(content, [vim.StoragePod], vc_datastore)
     podsel.storagePod = pod
