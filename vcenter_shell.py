@@ -140,7 +140,7 @@ class VcenterShell(Cmd):
             args = line.split()
             if len(args) < 9:
                 raise SystemExit('Please provide right numbers of arguments')
-            vm_name,template,tenant,cluster,datestore,cpu,ram,hdd,epg = args
+            vm_name,template,tenant,cluster,datastore,cpu,ram,hdd,epg = args
             if datastore.lower() == 'default':
                 datastore = None
             if epg.lower() == 'default':
@@ -149,7 +149,7 @@ class VcenterShell(Cmd):
             print('Please provide arguments as in help')
         try:
             print("Cloning {} to {}...".format(tempplate,vm_name))
-            clone(self.content,vm_name,template,tenant,cluster,datestore)
+            clone(self.content,vm_name,template,tenant,cluster,datastore)
             print("Completed")
         except Exception:
             print("Could not clone {} :-(".format(vm_name))
