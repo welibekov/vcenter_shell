@@ -43,7 +43,10 @@ def wait_for_task(task):
             task_done = True
 
 def connect_to_api(creds=vc_credentials):
-    creds = vc_credentials('.credentials')
+    try:
+        creds = vc_credentials('.credentials')
+    except FileNotFoundError:
+        raise SystemExit('No .credentials file found')
     SI = None
     try:
         SI = SmartConnectNoSSL(host=creds['VC_HOST'],
