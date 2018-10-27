@@ -90,9 +90,6 @@ def list_clusters(content,vmtype=[vim.ClusterComputeResource]):
                      cl.summary.overallStatus] for cl in cl_view}
 
 def list_datastores(content,vmtype=[vim.Datastore]):
-    '''TODO
-        list DRS datastores also
-    '''
     out = {}
     ds_obj = get_obj(content,[vim.Datastore])
     ds_view = ds_obj.view
@@ -236,7 +233,7 @@ def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore=None,pow
     task = template.Clone(folder=tenant,name=vm_name,spec=clonespec)
     wait_for_task(task)
 
-def vm_settings(content,vm_name,cpu,ram,hdd,epg,config=None):
+def vm_settings(content,vm_name,cpu,ram,hdd,epg=None,config=None):
     GiB = 1024*1024
     MiB = 1024
 
@@ -265,25 +262,26 @@ def vm_settings(content,vm_name,cpu,ram,hdd,epg,config=None):
     wait_for_task(task)
 
     ''' Changing EPG settings '''
-    device_change = []
-    for device in vm.config.hardware.device:
-        if isinstance(device, vim.vm.device.VirtualEthernetCard):
-            nicspec = vim.vm.device.VirtualDeviceSpec()
-            nicspec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
-            nicspec.device = device
-            nicspec.device.wakeOnLanEnabled = True
-            network = get_obj(content,[vim.dvs.DistributedVirtualPortgroup],epg)
-            dvs_port_connection = vim.dvs.PortConnection()
-            dvs_port_connection.portgroupKey = network.key
-            dvs_port_connection.switchUuid = network.config.distributedVirtualSwitch.uuid
-            nicspec.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
-            nicspec.device.backing.port = dvs_port_connection
-            nicspec.device.connectable = vim.vm.device.VirtualDevice.ConnectInfo()
-            nicspec.device.connectable.startConnected = True
-            nicspec.device.connectable.allowGuestControl = True
-            device_change.append(nicspec)
-            break
-    config_spec = vim.vm.ConfigSpec(deviceChange=device_change)
-    task = vm.ReconfigVM_Task(config_spec)
-    wait_for_task(task)
+    if epg:
+        device_change = []
+        for device in vm.config.hardware.device:
+            if isinstance(device, vim.vm.device.VirtualEthernetCard):
+                nicspec = vim.vm.device.VirtualDeviceSpec()
+                nicspec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
+                nicspec.device = device
+                nicspec.device.wakeOnLanEnabled = True
+                network = get_obj(content,[vim.dvs.DistributedVirtualPortgroup],epg)
+                dvs_port_connection = vim.dvs.PortConnection()
+                dvs_port_connection.portgroupKey = network.key
+                dvs_port_connection.switchUuid = network.config.distributedVirtualSwitch.uuid
+                nicspec.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
+                nicspec.device.backing.port = dvs_port_connection
+                nicspec.device.connectable = vim.vm.device.VirtualDevice.ConnectInfo()
+                nicspec.device.connectable.startConnected = True
+                nicspec.device.connectable.allowGuestControl = True
+                device_change.append(nicspec)
+                break
+        config_spec = vim.vm.ConfigSpec(deviceChange=device_change)
+        task = vm.ReconfigVM_Task(config_spec)
+        wait_for_task(task)
 

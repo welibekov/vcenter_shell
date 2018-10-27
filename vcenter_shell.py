@@ -50,15 +50,6 @@ class VcenterShell(Cmd):
         HBODY = "{0:<35s} {1:<15s} {2:<15s} {3:<15s} {4:<15s}"
         BODY = "{0:<35s} {1:<15.0f} {2:<15.0f} {3:<15s} {4:<15s}"
         datastores = list_datastores(self.content)
-        '''
-        datastores.update({HEADER[0]:HEADER[1:]})
-        for datastore,info in sorted(datastores.items(),reverse=True):
-            if datastore == 'NAME':
-                print(HBODY.format(datastore,*info))
-                print("-"*len(''.join(HEADER[0])))
-            else:
-                print(BODY.format(datastore,*info))
-        '''
         print(HBODY.format(*HEADER))
         print("-"*len(''.join(HEADER[0])))
         for datastore,info in sorted(datastores.items()):
@@ -141,12 +132,19 @@ class VcenterShell(Cmd):
         '''
         Clone virtual machine from template
         Example: clone NAME TEMPLATE TENANT CLUSTER DATASTORE CPU RAM HDD EPG
+        You can use \'default\' as parameter, to use default settings.
+        Currently supported only for DATASTORE(taken from .credentials config)
+        and for EPG(taken from template).
         '''
         try:
             args = line.split()
             if len(args) < 9:
                 raise SystemExit('Please provide right numbers of arguments')
             vm_name,template,tenant,cluster,datestore,cpu,ram,hdd,epg = args
+            if datastore.lower() == 'default':
+                datastore = None
+            if epg.lower() == 'default':
+                epg = None
         except ValueError:
             print('Please provide arguments as in help')
         try:
