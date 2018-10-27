@@ -46,10 +46,11 @@ class VcenterShell(Cmd):
 
     def do_list_datastores(self, line):
         '''list configured datastores'''
-        HEADER = ['NAME','CAPACITY','FREE','STATUS']
-        HBODY = "{0:<25s} {1:<15s} {2:<15s} {3:<15s}"
-        BODY = "{0:<25s} {1:<15.0f} {2:<15.0f} {3:<15s}"
+        HEADER = ['NAME','CAPACITY','FREE','STATUS','TYPE']
+        HBODY = "{0:<35s} {1:<15s} {2:<15s} {3:<15s} {4:<15s}"
+        BODY = "{0:<35s} {1:<15.0f} {2:<15.0f} {3:<15s} {4:<15s}"
         datastores = list_datastores(self.content)
+        '''
         datastores.update({HEADER[0]:HEADER[1:]})
         for datastore,info in sorted(datastores.items(),reverse=True):
             if datastore == 'NAME':
@@ -57,7 +58,12 @@ class VcenterShell(Cmd):
                 print("-"*len(''.join(HEADER[0])))
             else:
                 print(BODY.format(datastore,*info))
-        
+        '''
+        print(HBODY.format(*HEADER))
+        print("-"*len(''.join(HEADER[0])))
+        for datastore,info in sorted(datastores.items()):
+            print(BODY.format(datastore,*info))
+
     def do_list_tenants(self, line):
         '''list existing tenants'''
         HEADER = ['NAME']
@@ -136,13 +142,15 @@ class VcenterShell(Cmd):
         Clone virtual machine from template
         Example: clone NAME TEMPLATE TENANT CLUSTER DATASTORE CPU RAM HDD EPG
         '''
-        args = line.split()
         try:
+            args = line.split()
+            if len(args) < 9:
+                raise SystemExit('Please provide right numbers of arguments')
             vm_name,template,tenant,cluster,datestore,cpu,ram,hdd,epg = args
         except ValueError:
             print('Please provide arguments as in help')
         try:
-            print("Cloning {} to {}...".format(template,vm_name))
+            print("Cloning {} to {}...".format(tempplate,vm_name))
             clone(self.content,vm_name,template,tenant,cluster,datestore)
             print("Completed")
         except Exception:

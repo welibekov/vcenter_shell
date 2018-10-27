@@ -93,12 +93,21 @@ def list_datastores(content,vmtype=[vim.Datastore]):
     '''TODO
         list DRS datastores also
     '''
+    out = {}
     ds_obj = get_obj(content,[vim.Datastore])
     ds_view = ds_obj.view
     ds_obj.DestroyView()
-    return {ds.name:[int(ds.summary.capacity)/GB, 
+    out.update({ds.name:[int(ds.summary.capacity)/GB, 
                     int(ds.summary.freeSpace)/GB, 
-                    ds.overallStatus] for ds in ds_view}
+                    ds.overallStatus,'DS'] for ds in ds_view})
+    # storege DRS
+    ds_obj = get_obj(content,[vim.StoragePod])
+    ds_view = ds_obj.view
+    ds_obj.DestroyView()
+    out.update({ds.name:[int(ds.summary.capacity)/GB, 
+                    int(ds.summary.freeSpace)/GB,
+                    ds.overallStatus,'DRS'] for ds in ds_view})
+    return out
 
 def list_vms(content,name,vmtype=[vim.Folder]):
     ''' TODO:
@@ -192,25 +201,27 @@ def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore=None,pow
     if not vc_datastore:
         vc_datastore = creds['VC_DATASTORE']
     
-    podsel = vim.storageDrs.PodSelectionSpec()
     pod = get_obj(content, [vim.StoragePod], vc_datastore)
-    podsel.storagePod = pod
+    if pod:
+        podsel = vim.storageDrs.PodSelectionSpec()
+        podsel.storagePod = pod
 
-    storagespec = vim.storageDrs.StoragePlacementSpec()
-    storagespec.podSelectionSpec = podsel
-    storagespec.type = 'create'
-    storagespec.folder = tenant
-    storagespec.resourcePool = resource_pool
-    storagespec.configSpec = vmconf
+        storagespec = vim.storageDrs.StoragePlacementSpec()
+        storagespec.podSelectionSpec = podsel
+        storagespec.type = 'create'
+        storagespec.folder = tenant
+        storagespec.resourcePool = resource_pool
+        storagespec.configSpec = vmconf
 
-    try:
-        rec = content.storageResourceManager.RecommendDatastores(storageSpec=storagespec)
-        rec_action = rec.recommendations[0].action[0]
-        real_datastore_name = rec_action.destination.name
-    except:
-        real_datastore_name = template.datastore[0].info.name
-        datastore = get_obj(content, [vim.Datastore], real_datastore_name)
-
+        try:
+            rec = content.storageResourceManager.RecommendDatastores(storageSpec=storagespec)
+            rec_action = rec.recommendations[0].action[0]
+            real_datastore_name = rec_action.destination.name
+        except:
+            real_datastore_name = template.datastore[0].info.name
+            datastore = get_obj(content, [vim.Datastore], real_datastore_name)
+    else:
+        real_datastore_name = vc_datastore
     datastore = get_obj(content, [vim.Datastore], real_datastore_name)
 
     # clone specs preparation
