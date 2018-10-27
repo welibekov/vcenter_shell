@@ -8,6 +8,7 @@ import json
 import atexit
 
 GB = 1024*1024*1024
+__credentials__ = '.credentials'
 
 def vc_credentials(filename):
     with open(filename) as f:
@@ -44,7 +45,7 @@ def wait_for_task(task):
 
 def connect_to_api(creds=vc_credentials):
     try:
-        creds = vc_credentials('.credentials')
+        creds = vc_credentials(__credentials__)
     except FileNotFoundError:
         raise SystemExit('No .credentials file found')
     SI = None
@@ -196,8 +197,12 @@ def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore=None,pow
 
     # Storage DRS resourse
     if not vc_datastore:
+        try:
+            creds = vc_credentials(__credentials__)
+        except FileNotFoundError:
+            raise SystemExit('No .credentials file found')
         vc_datastore = creds['VC_DATASTORE']
-    
+ 
     pod = get_obj(content, [vim.StoragePod], vc_datastore)
     if pod:
         podsel = vim.storageDrs.PodSelectionSpec()

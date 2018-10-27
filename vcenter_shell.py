@@ -148,17 +148,17 @@ class VcenterShell(Cmd):
         except ValueError:
             print('Please provide arguments as in help')
         try:
-            print("Cloning {} to {}...".format(tempplate,vm_name))
+            print("Cloning {} to {}...".format(template,vm_name))
             clone(self.content,vm_name,template,tenant,cluster,datastore)
             print("Completed")
-        except Exception:
-            print("Could not clone {} :-(".format(vm_name))
+        except Exception as err:
+            print("Could not clone {} :-(\nERR: {}".format(vm_name,err))
         try:
             print("Changing {} settings...".format(vm_name))
             vm_settings(self.content,vm_name,cpu,ram,hdd,epg)
             print("Completed")
-        except Exception:
-            print("Could not change settings to {} :-(".format(vm_name))
+        except Exception as err:
+            print("Could not change settings to {} :-(\nERR: {}".format(vm_name,err))
 
     def do_clone_from_file(self, line):
         '''
