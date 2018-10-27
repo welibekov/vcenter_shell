@@ -81,7 +81,7 @@ class VcenterShell(Cmd):
                 if info[0] == 'v' or info[0] == 't':
                     #print("{0} -- {1:<20} {2:>5} {3:>5} {4:>5} {5:>5}".format(info[0],vm,*info[1:]))
                     #print("{} -- {} {} {} {} {} {} {}".format(info[0],vm,*info[1:]))
-                    print(info[0],vm,*info[1:])
+                    print(info[0],'--',vm,*info[1:])
                 elif info[0] == 'd':
                     print("{0} -- {1}".format(info[0],vm))
         except AttributeError:
@@ -164,7 +164,7 @@ class VcenterShell(Cmd):
         '''
         Clone virtual machine from template but take config from the file
         Examples: clone_from_file FILENAME
-        FILENAME syntax ini style. Please check examples
+        FILENAME syntax yaml style. Please check examples
         '''
         pass
 
@@ -245,6 +245,35 @@ class VcenterShell(Cmd):
         for info in config_info:
             print("{}\t".format(info),end='')
         print()
+
+    def do_set(self, line):
+        '''
+        Set virtual machine settings
+        NOT IMPLEMENTED YET
+        '''
+        pass
+
+    def do_add(self, line):
+        '''
+        Add virtual device
+        NOT IMPLEMENTED YET
+        '''
+        pass
+
+    def do_shell(self, line):
+        '''
+        Drop to virtual machine shell
+        NOT IMPLEMENTED YET
+        '''
+        pass
+    
+    def do_run(self, line):
+        '''
+        Run command inside virtual machine
+        NOT IMPLEMENTED YET
+        '''
+        pass
+        
 
 if __name__ == '__main__':
     myshell = VcenterShell()
