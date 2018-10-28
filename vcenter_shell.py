@@ -4,6 +4,7 @@
 from cmd import Cmd
 from core import *
 import os
+import yaml
 
 class VcenterShell(Cmd):
     def __init__(self):
@@ -166,8 +167,56 @@ class VcenterShell(Cmd):
         Examples: clone_from_file FILENAME
         FILENAME syntax yaml style. Please check examples
         '''
-        pass
+        try:
+            args = line.split()
+            with open(args[0]) as stream:
+                data = yaml.load(stream)
+        except Exception as err:
+            print(err)
+        
+        try:
+            print("####\nFollowing configuration would be provisioned\n")
+            print('DEFAULT:')
+            print(' Datacenter={}\n Datastore={}\n Cluster={}\n'.format(
+                                                data['default']['datacenter'],
+                                                data['default']['datastore'],
+                                                data['default']['cluster'])) 
+       
+            print('VMS:')
+            for vm in data['vm']:
+                print(' name={}\n tenant={}\n template={}\n cpu={}\n ram={}\n hdd={}\n datastore={}\n epg={}\n cluster={}\n'.format(
+                        vm['name'],vm['tenant'],vm['template'],vm['cpu'],vm['ram'],vm['hdd'],vm['datastore'],vm['epg'],vm['cluster']))
 
+        except KeyError as err:
+            print('ERR: {} not found'.format(err))
+            return
+   
+        answer = input("##=> proceed? y/n ")
+        if answer == 'y':
+            print('processing...')
+            for vm in data['vm']:
+                if vm['cluster'].lower() == 'default':
+                    vm['cluster'] = data['default']['cluster']
+
+                if vm['datastore'].lower() == 'default':
+                    vm['datastore'] = data['default']['datastore']
+
+                if vm['epg'].lower() == 'default':
+                    vm['epg'] = data['default']['epg']
+                    
+                if vm['template'].lower() == 'default':
+                    vm['template'] = data['default']['template']
+
+                print("Cloning {} to {}...".format(vm['template'],vm['name']))
+                clone(self.content,vm['name'],vm['template'],vm['tenant'],vm['cluster'],vm['datastore'])
+                print('Completed')
+                
+                print("Changing {} settings...".format(vm['name']))
+                vm_settings(self.content,vm['name'],vm['cpu'],vm['ram'],vm['hdd'],vm['epg'])
+                print("Completed")
+        else:
+            return
+        
     def do_start_vm(self, line):
         '''
         Start virtual machine
