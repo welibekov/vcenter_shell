@@ -107,14 +107,17 @@ def list_datastores(content,vmtype=[vim.Datastore]):
                     ds.overallStatus,'DRS'] for ds in ds_view})
     return out
 
-def list_vms(content,name,vmtype=[vim.Folder]):
+def list_vms(content,tenant,vmtype=[vim.Folder]):
     ''' TODO:
         list nested vms
         show OS disk size and type
     '''
-    vm_obj = get_obj(content,vmtype,name)
+    #vm_obj = get_obj(content,vmtype,name)
+    if tenant.startswith('/'):
+        tenant = vc_tenant[1:]
+    tenant_obj = content.searchIndex.FindByInventoryPath('DC01/vm/Tenants/'+tenant)
     vms = {}
-    for vm in vm_obj.childEntity:
+    for vm in tenant_obj.childEntity:
         if hasattr(vm,"PowerOff"):
             if vm.summary.config.template:
                 vms.update({vm.name:['t',vm.summary.config.numCpu,
@@ -189,8 +192,10 @@ def clone(content,vm_name,vc_template,vc_tenant,vc_cluster,vc_datastore=None,pow
     # desired cluster 
     cluster = get_obj(content, [vim.ClusterComputeResource], vc_cluster)
     # desired tenant
-    tenant = get_obj(content, [vim.Folder], vc_tenant)
-
+    # tenant = get_obj(content, [vim.Folder], vc_tenant)
+    if vc_tenant.startswith('/'):
+        vc_tenant = vc_tenant[1:]
+    tenant = content.searchIndex.FindByInventoryPath('DC01/vm/Tenants/'+vc_tenant)
     # cluster and config specs
     resource_pool = cluster.resourcePool
     vmconf = vim.vm.ConfigSpec()
@@ -290,3 +295,37 @@ def vm_settings(content,vm_name,cpu,ram,hdd,epg=None,config=None):
         task = vm.ReconfigVM_Task(config_spec)
         wait_for_task(task)
 
+def add_disk(content, vm_name, disk_size, disk_type='thin'):
+    vm = get_obj(content, [vim.VirtualMachine], vm_name)
+    spec = vim.vm.ConfigSpec()
+    unit_number = 0
+    controller = None
+    for dev in vm.config.hardware.device:
+        if hasattr(dev.backing, 'fileName'):
+            unit_number = int(dev.unitNumber) + 1
+            if unit_number == 7:
+                unit_number += 1
+            if unit_number >= 16:
+                print("we don't support this many disks")
+                return
+        if isinstance(dev, vim.vm.device.VirtualSCSIController):
+            controller = dev
+
+    # add disk here
+    dev_changes = []
+    new_disk_kb = int(disk_size) * 1024 * 1024
+    disk_spec = vim.vm.device.VirtualDeviceSpec()
+    disk_spec.fileOperation = "create"
+    disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+    disk_spec.device = vim.vm.device.VirtualDisk()
+    disk_spec.device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+    if disk_type == 'thin':
+        disk_spec.device.backing.thinProvisioned = True
+    disk_spec.device.backing.diskMode = 'persistent'
+    disk_spec.device.unitNumber = unit_number
+    disk_spec.device.capacityInKB = new_disk_kb
+    disk_spec.device.controllerKey = controller.key
+    dev_changes.append(disk_spec)
+    spec.deviceChange = dev_changes
+    task = vm.ReconfigVM_Task(spec=spec)
+    wait_for_task(task)

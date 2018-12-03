@@ -104,13 +104,16 @@ class VcenterShell(Cmd):
         find virtual machine by name
         Example: find_vm NAME
         '''
-        args = line.split()
-        vm = find_vm(self.content,args[0])
-        if vm:
-            for key,val in vm.items():
-                print("{} -- {} {} {} {} {} {} {} {}".format(key,*val))
-        else:
-            print('No vm with {} name found'.format(args[0]))
+        try:
+            args = line.split()
+            vm = find_vm(self.content,args[0])
+            if vm:
+                for key,val in vm.items():
+                    print("{} -- {} {} {} {} {} {} {} {}".format(key,*val))
+            else:
+                print('No vm with {} name found'.format(args[0]))
+        except:
+            return
 
     def do_list_dvs(self,line):
         '''
@@ -206,6 +209,9 @@ class VcenterShell(Cmd):
                     
                 if vm['template'].lower() == 'default':
                     vm['template'] = data['default']['template']
+
+                if vm['tenant'].lower() == 'default':
+                    vm['tenant'] = data['default']['tenant']
 
                 print("Cloning {} to {}...".format(vm['template'],vm['name']))
                 clone(self.content,vm['name'],vm['template'],vm['tenant'],vm['cluster'],vm['datastore'])
